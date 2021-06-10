@@ -22,10 +22,12 @@ from google.protobuf import duration_pb2
 from Crypto.Cipher import AES
 
 from lorawan_deployement import *
+from lorawan_as import *
+from lorawan_status_version import *
+from device_list import *
 
 #DO DEBUG PRINT ?
 debug = 0
-
 
 # Configuration.
 # Point to the API interface of the main server
@@ -62,11 +64,7 @@ mcRootKeyA =  bytes([0x90, 0xe4, 0x43, 0x45, 0x32, 0x9d, 0xd0, 0x5c, 0xe8, 0x34,
 # in device list, devices should be identified by a hexstring corresponding to their devEUI
 # inside a device, there can be various fields, they can be filled as events happens
 
-device_list = {
-  '0080000004006aa0' : {
-      "device_name"   : 'NodeTest',
-      "application_name" : 'LoraAppTest',}
-}
+
 
 try : 
   binaries_list = { 
@@ -111,227 +109,6 @@ try :
 except: 
   binaries_list = {
 }
-
-#dev_eui should be in stored state ie: str of hex
-#data should be a dic of attribute/value of device
-def update_device_list(dev_eui,data):
-  global device_list
-  
-  if debug == 1 : 
-    print("-> Before : ", end="")
-    print(device_list)
-  if dev_eui in device_list : 
-    device_list[dev_eui].update(data)
-  else :
-    device_list.update({
-      dev_eui : data
-    })
-  if debug == 1 : 
-    print("-> After : ", end="")
-    print(device_list)
-
-
-
-class LoraWanStatusVersion() :
-  global device_list
-
-  #HandleReceptions (Stores infos to devices_list)
-  def handleRcvMsg(self,dev_eui,payload):
-    print("Status/Version message received ... ")
-    print("Payload is " + str(payload))
-    if (len(payload) < 1):
-      print("lenght of received is too short : don't carry command")
-    else : 
-      if(payload[0] == 0x00):
-        #packageVersionAns
-        self.handlePackageVersionAns(dev_eui = dev_eui, payload = payload[1:])
-      elif (payload[0] == 0x01):
-        #versionRunningAns
-        self.handleVersionRunningAns(dev_eui = dev_eui, payload = payload[1:])
-      elif (payload[0] == 0x02):
-        #versionStoredAns
-        self.handleVersionStoredAns(dev_eui = dev_eui, payload = payload[1:])
-      elif (payload[0] == 0x03):
-        #spaceStatusAns
-        self.handleSpaceStatusAns(dev_eui = dev_eui, payload = payload[1:])
-      elif (payload[0] == 0x04):
-        #upTimeAns
-        self.handleUpTimeAns(dev_eui = dev_eui, payload = payload[1:])
-      elif (payload[0] == 0x06):
-        #ID
-        self.handleDeviceIDAns(dev_eui = dev_eui, payload = payload[1:])
-      else : 
-        print("Command not implemented")
-    if debug == 1 : 
-      print("-> End of handling : ", end="")
-      print(device_list)
-      
-
-  def handlePackageVersionAns(self,dev_eui,payload):
-    if (len(payload) < 3):
-      print("lenght of received is too short")
-    else:
-      packageId =       payload[0]
-      packageVersion =  payload[1]
-      versionInfo =     payload[2]
-      versionType =   (versionInfo & 0xf0)>>4
-      nbSlot =        (versionInfo & 0x0f)
-      versionStrType = ""
-      if (versionType <= 0 | versionType > 2): 
-        versionStrType = "Not supported"
-      elif (versionType == 1): 
-        versionStrType = "Major:Minor:Patch"
-      elif (versionType == 2): 
-        versionStrType = "Sec Timestamp"
-      print("On device implementation is :")
-      print("packageId      :" + str(packageId))
-      print("packageVersion :" + str(packageVersion))
-      print("Versioning Type:" + str(versionStrType))
-      update_device_list(dev_eui,{
-          "package_version" : packageVersion,
-          "versioning_type" : versionStrType
-          })
-
-
-  def handleVersionRunningAns(self,dev_eui,payload):
-    if (len(payload) < 5):
-      print("lenght of received is too short")
-    else:
-      runningSlot =(0x0F & payload[0])
-      print("considering slot" + str(runningSlot))
-      slotVersion = int.from_bytes(payload[1:5],"little")
-      slot = "version_slot"+ str(runningSlot)
-      print("version is :" + str(slotVersion))
-      update_device_list(dev_eui,{
-          slot : slotVersion,
-      })
-
-  def handleVersionStoredAns(self,dev_eui,payload):
-    if (len(payload) < 5):
-      print("lenght of received is too short")
-    else:
-      nbSlot = (0x0F & payload[0])
-      for i in range(0 , (nbSlot-1)):
-        print("considering slot" + str(i))
-        slotVersion = int.from_bytes(payload[(1+i*4):(5+i*4)],"little")
-        slot = "version_slot"+ str(i)
-        print("version is :" + str(slotVersion))
-        update_device_list(dev_eui,{
-          slot : slotVersion,
-        })
-
-  def handleSpaceStatusAns(self,dev_eui,payload):
-    if (len(payload) < 8):
-      print("lenght of received is too short")
-    else:
-      heap = int.from_bytes(payload[0:4],"little")
-      slotSize = int.from_bytes(payload[4:8],"little")
-      update_device_list(dev_eui,{
-          "heap_available"      : heap,
-          "slot_size"      : slotSize,
-      })
-
-  def handleUpTimeAns(self,dev_eui,payload):
-    if (len(payload) < 4):
-      print("lenght of received is too short")
-    else:
-      uptime = int.from_bytes(payload[0:4],"little")
-      update_device_list(dev_eui,{
-          "up_time"      : uptime,
-      })
-
-  def handleDeviceIDAns(self,dev_eui,payload):
-    if (len(payload) < 1):
-      print("lenght of received is too short")
-    else:
-      print("payload to analyse is :" , end="")
-      print(payload)
-      #payload[0] is the flags answer 
-      nbString = 1
-
-      if ((payload[0] & 0b10) == 0b10) :
-        #Manufacturer id is present
-        length = payload[nbString]
-        nbString += 1
-        string = str(payload[nbString:nbString+length],'UTF-8')
-        nbString += length #current offset + length
-        update_device_list(dev_eui,{
-          "manufacturer_id"      : string,
-        })
-        
-      if ((payload[0] & 0b01) == 0b01) : 
-        #Device id is present
-        length = payload[nbString]
-        nbString += 1
-        string = str(payload[nbString:nbString+length],'UTF-8')
-        nbString += length #current offset + length
-        update_device_list(dev_eui,{
-          "device_id"      : string,
-        })
-
-  #Definitions to send packets to device
-  def askPackageVersion(self,dev_eui):
-    print("Requests Package version of" + dev_eui)
-    toSend = bytes([0x00])
-    self.send(dev_eui,111,toSend)
-
-  def askVersionRunning(self,dev_eui):
-    print("Requests running version of " + dev_eui)
-    toSend = bytes([0x01])
-    self.send(dev_eui,111,toSend)
-
-
-  def askVersionStored(self,dev_eui):
-    print("Requests stored version of " + dev_eui)
-    nbSlot = 3
-    storedInfoParam = ((0x0F & 0) | (0xF0 & nbSlot))
-    toSend = bytes([0x02 , storedInfoParam])
-    self.send(dev_eui,111,toSend)
-
-  def askSpaceStatus(self,dev_eui):
-    print("Requests space status of " + dev_eui)
-    toSend = bytes([0x03])
-    self.send(dev_eui,111,toSend)
-
-  def askUpTime(self,dev_eui):
-    print("Requests uptime of " + dev_eui)
-    toSend = bytes([0x04])
-    self.send(dev_eui,111,toSend)
-
-  def askEraseSlot(self,dev_eui,slot):
-    print("Requests Erase slot0 of " + dev_eui)
-    if slot == '0' : 
-      toSend = bytes([0x05, 0x00])
-      self.send(dev_eui,111,toSend)
-    elif slot == '1':
-      toSend = bytes([0x05, 0x01])
-      self.send(dev_eui,111,toSend)
-    else:
-      if debug : print("slot to erase is not specified, so do nothing")
-    
-  def askDeviceID(self,dev_eui):
-    print("Requests Device ID of " + dev_eui)
-    toSend = bytes([0x06, 0x03])
-    self.send(dev_eui,111,toSend)
-
-
-  #Sending Data
-  def send(self,dev_eui,port,payload):
-    # Define the API key meta-data.
-    auth_token = [("authorization", "Bearer %s" % as_api_token)]
-
-    # Construct request.
-    req = api.EnqueueDeviceQueueItemRequest()
-    req.device_queue_item.confirmed = False
-    req.device_queue_item.data = bytes(payload) #TODO: verify payload type
-    req.device_queue_item.dev_eui = dev_eui     #TODO: verify dev_eui type
-    req.device_queue_item.f_port = port
-
-    resp = as_Queue.Enqueue(req, metadata=auth_token)
-    
-    print("Sending on port " + str(port) + " ; reported count : " + str(resp.f_cnt))
-
-
 
 class Handler(BaseHTTPRequestHandler):
   global LWDeployment
@@ -473,15 +250,15 @@ class Handler(BaseHTTPRequestHandler):
 
   # ----------- HANDLE APP REQUEST -------------
   def send_Device_List(self) :
-    global device_list
+    devices_list = deviceList.get_device_list()
 
     answer = bytes([])
     device_short_list = {}
-    for eui in device_list:
+    for eui in devices_list:
       print("eui is :" + str(eui))
       device_short_list.update({eui : {
-          "device_name"      : device_list[eui]['device_name'],
-          "application_name" : device_list[eui]['application_name'],
+          "device_name"      : devices_list[eui]['device_name'],
+          "application_name" : devices_list[eui]['application_name'],
       }, })
     if debug == 1 : 
       print("-> Devices short list : ", end="")
@@ -493,11 +270,12 @@ class Handler(BaseHTTPRequestHandler):
     self.wfile.write(answer)
 
   def send_Device_details(self,dev_eui) :
-    global device_list
+    devices_list = deviceList.get_device_list()
+
 
     self.send_response(200)
     self.end_headers()
-    self.wfile.write(json.dumps(device_list[dev_eui]).encode())
+    self.wfile.write(json.dumps(devices_list[dev_eui]).encode())
   
   def send_Update_List(self) :
     self.send_response(200)
@@ -524,15 +302,14 @@ class Handler(BaseHTTPRequestHandler):
         print("handler for event %s is not implemented" % query_args["event"][0])
 
   def up_event(self, body):
-    global device_list 
-    
+
     up = self.unmarshal(body, integration.UplinkEvent())
     print("Uplink received from: %s with payload: %s" % (up.dev_eui.hex(), up.data.hex()))
     
     if (up.f_port == 111):
       StatusVersion.handleRcvMsg(up.dev_eui.hex(),up.data)
 
-    update_device_list(up.dev_eui.hex(),{
+    deviceList.update_device_list(up.dev_eui.hex(),{
         "dev_addr"      : up.dev_addr.hex(),
         "device_name"   : up.device_name,
         "application_name" : up.application_name,
@@ -544,11 +321,10 @@ class Handler(BaseHTTPRequestHandler):
 
 
   def join_event(self, body):
-    global device_list
     join = self.unmarshal(body, integration.JoinEvent())
     print("Device: %s joined with DevAddr: %s" % (join.dev_eui.hex(), join.dev_addr.hex()))
     
-    update_device_list(join.dev_eui.hex(),{
+    deviceList.update_device_list(join.dev_eui.hex(),{
         "dev_addr"      : join.dev_addr.hex(),
         "device_name"   : join.device_name,
         "application_name" : join.application_name,
@@ -565,8 +341,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 httpd = HTTPServer(('', 8091), Handler)
-StatusVersion = LoraWanStatusVersion()
+
+deviceList = device_list()
+
+ApplicationServer = lorawan_as()
+StatusVersion = lorawan_status_version(ApplicationServer,deviceList)
+
 LWDeployment = lorawan_deployement()
+
 #StatusVersion.send(dev_eui = (bytes([0x00, 0x80, 0x00, 0x00, 0x04, 0x00, 0x6a, 0xaa]).hex()),port = 111,payload = bytes([1, 2, 3]))
 httpd.serve_forever()
 
