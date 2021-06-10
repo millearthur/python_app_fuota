@@ -1,0 +1,564 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:,">
+
+    <title>LoraWan Data exchange</title>
+     <!-- FontAnwsome Style -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+        integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <!-- Bootstrap Style -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    
+    <!-- jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+    </script>
+    <!-- Ajax ? -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+    </script>
+    <!-- Bootstrap Scripts -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+    </script>
+
+    <!-- Own Style -->
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+        }
+
+        header {
+            margin: 0;
+            padding-top: 5vh;
+            padding-bottom: 5vh;
+            overflow: hidden;
+            background-color: rgb(207, 207, 207);
+            background-image: url(back_k.jpeg);
+            background-size: cover;
+            color: rgb(39, 39, 39);
+        }
+
+        h2 {
+            font-size: 2.0rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+        }
+
+        .units {
+            font-size: 1.2rem;
+        }
+
+        .readings {
+            font-size: 2.0rem;
+        }
+
+        .btn:hover .fa-spin-hover {
+            -webkit-transform: rotateZ(180deg);
+            -moz-transform: rotateZ(180deg);
+            transform: rotateZ(180deg);
+        }
+       
+        .fa-spin-hover{
+            -webkit-transition: 0.5s ease-out;
+            -moz-transition:  0.5s ease-out;
+            transition:  0.5s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>LoRaWAN</h1>
+    </header>
+    <main>
+        <!-- New interface -->
+        <div class="container-fluid border">
+            <!-- Devices Data -->
+            <div class="container-fluid border">
+                <div class="container py-2">
+                    <h2>LoRaWan devices</h2>
+                </div>
+                <div class="row border">
+                    <!-- Devices list -->
+                    <div class="col border">
+                        <div class="border py-2">
+                            <h3>Devices list</h3>
+                            <button type="button" class="btn btn-light border" onclick="updateDeviceList()">
+                                <i class="fas fa-sync-alt fa-spin-hover"></i> refresh
+                            </button>
+                        </div>
+                                            
+                        <p id="device_list_table"></p>
+
+                    </div>
+                    <!-- Devices details -->
+                    <div class="col border">
+                        <div class="border py-2">
+                            <h3>Devices details</h3>
+                            <button type="button" class="btn btn-light border" onclick="refreshDeviceDetails()">
+                                <i class="fas fa-sync-alt fa-spin-hover"></i> refresh
+                            </button>
+                        </div>
+                        <p id="device_details_table">please click a device</p>
+
+                        <button type="button" class="btn btn-light border m-2" onclick="askPackageVersion()">
+                            <i class="fas fa-paper-plane"></i> askPackageVersion
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askVersionRunning()">
+                            <i class="fas fa-paper-plane"></i> askVersionRunning
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askVersionStored()">
+                            <i class="fas fa-paper-plane"></i> askVersionStored
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askSpaceStatus()">
+                            <i class="fas fa-paper-plane"></i> askSpaceStatus
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askUpTime()">
+                            <i class="fas fa-paper-plane"></i> askUpTime
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askDeviceID()">
+                            <i class="fas fa-paper-plane"></i> askDeviceID
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askEraseSlot0()">
+                            <i class="fas fa-paper-plane"></i> askEraseSlot0
+                        </button>
+                        <button type="button" class="btn btn-light border m-2" onclick="askEraseSlot1()">
+                            <i class="fas fa-paper-plane"></i> askEraseSlot1
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- FUOTA Data -->
+            <div class="container-fluid border">
+                <div class="container py-2">
+                    <h2>FUOTA</h2>
+                </div>
+                <div class="row border">
+                    <!-- Update list -->
+                    <div class="col border">
+                        <div class="border py-2">
+                            <h3>Update list</h3>
+                            <button type="button" class="btn btn-light border" onclick="updateUpdateList()">
+                                <i class="fas fa-sync-alt fa-spin-hover"></i> refresh
+                            </button>
+                        </div>
+                                            
+                        <p id="update_list_table"></p>
+
+                    </div>
+                    <!-- Deployment -->
+                    <div class="col border">
+                        <div class="border py-2">
+                            <h3>Deployment</h3>
+                            <button type="button" class="btn btn-light border" onclick="updateDeploymentInfo()">
+                                <i class="fas fa-sync-alt fa-spin-hover"></i> refresh
+                            </button>
+                        </div>
+
+                        <p id="deployment_list_table"></p>
+
+                        <div class="container-fluid">
+                            <div class="row py-2">
+                                <div class="col-12">
+                                    <p>
+                                        For testing purpose, the current GenAppKey is the same as the AppKey<br>
+                                        Current value used is : <br>
+                                        "350b7f62cf56ab3efe9e2cc724e83faa"
+                                    </p>
+                                    <input type="text-area" id="genAppKeyInput" class="col-12" placeholder="please enter device GenAppKey as hexString" value=""/>
+                                </div>
+                            </div> 
+                            <div class="row py-2">
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-light border m-2" onclick="setdeploymentInfos()">
+                                        <i class="fas fa-check"></i> Set values
+                                    </button>
+                                    <button type="button" class="btn btn-light border m-2" onclick="askStartDeployment()">
+                                        <i class="fas fa-play"></i> Start Update
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        
+        </div>
+    </main>
+
+
+
+    <script>
+        var device_count = 0 , update_count=0;
+        var active_device;
+        //setInterval(updateDeviceList, 5000);
+
+         function updateDeviceList() {
+            var xhttp = new XMLHttpRequest(); //request to server
+            
+            //prepare how to handle answer
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var jsonAnswer = JSON.parse(this.responseText);
+                    console.log(jsonAnswer);
+                    toWrite = "";
+                    //table header
+                    toWrite += '\
+<table class="table table-hover border">\
+    <thead>\
+        <tr>\
+            <th scope="col">Name</th>\
+            <th scope="col">Dev_eui</th>\
+            <th scope="col">Select</th>\
+        </tr>\
+    </thead>\
+    <tbody>' ;
+                    // add table content
+                    device_count = 0;
+                    for (element in jsonAnswer){
+                        //console.log(element); //deveui
+                        //console.log(jsonAnswer[element]); //whole list of properties
+                        //console.log(jsonAnswer[element].device_name); //value of propertie device_name
+                        toWrite +=  '\
+        <tr class="table-row" data-eui=' + element +'>\
+            <td>' + jsonAnswer[element].device_name + '</td>\
+            <td>' + element + '</td>\
+            <td>' + '<input type="checkbox" id="device'+device_count+'" name="device'+device_count+'" value="'+element+'">' + '</td>\
+        </tr>';
+                        device_count ++;
+                    }
+                    toWrite += '\
+    </tbody>\
+</table>';
+                    document.getElementById("device_list_table").innerHTML = toWrite;
+                    addRowHandlers();
+                }
+            }
+            //actually send the request
+            xhttp.open("GET", "/lorawan/device_list/", true);
+            xhttp.send();
+
+         }
+         function refreshDeviceDetails(){
+            updateDeviceDetails(active_device);
+         }
+
+         function updateDeviceDetails(dev_eui) {
+            var xhttp = new XMLHttpRequest(); //request to server
+            
+            //prepare how to handle answer
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var jsonAnswer = JSON.parse(this.responseText);
+                    console.log(jsonAnswer);
+                    toWrite = "";
+                    toWrite += '\
+<table class="table table-hover border">\
+    <tbody>' ;
+
+                    for (element in jsonAnswer){
+                        toWrite +=  '\
+        <tr>\
+            <td>' + element + '</td>\
+            <td>' + jsonAnswer[element] + '</td>\
+        </tr>';
+                    }
+                    toWrite += '\
+    </tbody>\
+</table>';
+                    document.getElementById("device_details_table").innerHTML = toWrite;
+                }
+            }
+            //actually send the request
+            xhttp.open("GET", "/lorawan/device_details?eui=" + dev_eui , true);
+            xhttp.send();
+
+         }
+
+         //Adding / refreshing action on row click
+         function addRowHandlers() {
+            var table = document.getElementById("device_list_table");
+            var rows = table.getElementsByClassName("table-row");
+            for (i = 0; i < rows.length; i++) {
+                //for each row, assign update on eui function
+                var currentRow = rows[i];
+                var createClickHandler = 
+                    function(row) {
+                        return function() { 
+                            var cell = row.getElementsByTagName("td")[1];
+                            var dev_eui = cell.innerHTML
+                            active_device = dev_eui
+                            updateDeviceDetails(dev_eui);
+                        };
+                    };
+                currentRow.onclick = createClickHandler(currentRow);
+            }
+        }
+
+        function updateUpdateList() {
+            var xhttp = new XMLHttpRequest(); //request to server
+            
+            //prepare how to handle answer
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var jsonAnswer = JSON.parse(this.responseText);
+                    console.log(jsonAnswer);
+                    toWrite = "";
+                    //table header
+                    toWrite += '\
+<table class="table table-hover border">\
+    <thead>\
+        <tr>\
+            <th scope="col">Path</th>\
+            <th scope="col">isUpdate/algo/compression</th>\
+            <th scope="col">target</th>\
+            <th scope="col">size</th>\
+            <th scope="col">old_Version</th>\
+            <th scope="col">new_Version</th>\
+            <th scope="col">Select</th>\
+        </tr>\
+    </thead>\
+    <tbody>' ;
+                    // add table content
+                    update_count = 0;
+                    for (element in jsonAnswer){
+                        toWrite +=  '\
+        <tr class="table-row" data-eui=' + element +'>\
+            <td>' + element + '</td>\
+            <td>' + jsonAnswer[element].is_update + '|'+ jsonAnswer[element].update_type + '|'+ jsonAnswer[element].update_z + '</td>\
+            <td>' + jsonAnswer[element].target + '</td>\
+            <td>' + jsonAnswer[element].size + ' bytes </td>\
+            <td>' + jsonAnswer[element].old_version + '</td>\
+            <td>' + jsonAnswer[element].new_version + '</td>\
+            <td>' + '<input type="radio" id="update'+update_count+'" name="update" value="'+element+'">' + '</td>\
+        </tr>';
+                    update_count ++;
+                    }
+                    toWrite += '\
+    </tbody>\
+</table>';
+                    document.getElementById("update_list_table").innerHTML = toWrite;
+                    addRowHandlers();
+                }
+            }
+            //actually send the request
+            xhttp.open("GET", "/lorawan/update_list/", true);
+            xhttp.send();
+
+         }
+         function updateDeploymentInfo() {
+            var xhttp = new XMLHttpRequest(); //request to server
+            
+            //prepare how to handle answer
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var jsonAnswer = JSON.parse(this.responseText);
+                    console.log(jsonAnswer);
+                    toWrite = "";
+                    //table header
+                    toWrite += '\
+<table class="table table-hover border">\
+    <thead>\
+        <tr>\
+            <th scope="col">Device list</th>\
+            <th scope="col">binary</th>\
+            <th scope="col">GenAppKey</th>\
+        </tr>\
+    </thead>\
+    <tbody>' ;
+                    // add table content
+                    toWrite +=  '\
+        <tr class="table-row">\
+            <td>' + jsonAnswer['dev_eui_list'] + '</td>\
+            <td>' + jsonAnswer['binary'] + '</td>\
+            <td>' + jsonAnswer['genAppKey'] + '</td>\
+        </tr>';
+                    toWrite += '\
+    </tbody>\
+</table>';
+                    document.getElementById("deployment_list_table").innerHTML = toWrite;
+                    addRowHandlers();
+                }
+            }
+            //actually send the request
+            xhttp.open("GET", "/lorawan/deployment_list/", true);
+            xhttp.send();
+
+         }
+         function setdeploymentInfos(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            toSend = '/lorawan/deployment/set?'
+            //Set devices eui list
+            
+            var checkboxes = document.querySelectorAll('input[type=checkbox]:checked')
+            //console.log('Devices found :')
+            //console.log(checkboxes)
+            checkboxes.forEach(function(checkbox){
+                if (toSend.length != 24) {
+                    toSend += '&'
+                }
+                toSend += 'eui='
+                toSend += checkbox.value
+            });
+
+            //Set updateBin
+            toSend += '&bin='
+            var binary = document.querySelector('input[type=radio]:checked')
+            //console.log('Binary found :')
+            //console.log(binary)
+            toSend += binary.value
+
+            //Set GenAppKey
+            toSend += '&key='
+            var genAppKey = document.getElementById("genAppKeyInput");
+            //console.log('GenAppKey found :')
+            //console.log(genAppKey.value)
+            toSend += genAppKey.value
+
+            console.log('Final : toSend')
+            console.log(toSend)
+            xhttp.open("POST", toSend, true);
+            xhttp.send();
+
+            updateDeploymentInfo();
+         }
+
+         function askStartDeployment(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/deployment/start", true);
+            xhttp.send();
+         }
+          
+
+         function askPackageVersion(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '00', true);
+            xhttp.send();
+
+         }
+         function askVersionRunning(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '01', true);
+            xhttp.send();
+
+         }
+         function askVersionStored(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '02', true);
+            xhttp.send();
+
+         }
+         function askSpaceStatus(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '03', true);
+            xhttp.send();
+
+         }
+         function askUpTime(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '04', true);
+            xhttp.send();
+         }
+
+         function askEraseSlot0(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '05'+ "&slot=0", true);
+            xhttp.send();
+         }
+         function askEraseSlot1(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '05'+ "&slot=1", true);
+            xhttp.send();
+         }
+         function askDeviceID(){
+            var xhttp = new XMLHttpRequest(); //request to server
+            var dev_eui = active_device;
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '06', true);
+            xhttp.send();
+         }
+
+
+        //Start default actions
+        window.onload = addRowHandlers();
+
+
+    </script>
+</body>
+
+</html>
