@@ -46,29 +46,23 @@
             background-size: cover;
             color: rgb(39, 39, 39);
         }
-
         h2 {
             font-size: 2.0rem;
         }
-
         p {
             font-size: 1.2rem;
         }
-
         .units {
             font-size: 1.2rem;
         }
-
         .readings {
             font-size: 2.0rem;
         }
-
         .btn:hover .fa-spin-hover {
             -webkit-transform: rotateZ(180deg);
             -moz-transform: rotateZ(180deg);
             transform: rotateZ(180deg);
         }
-       
         .fa-spin-hover{
             -webkit-transition: 0.5s ease-out;
             -moz-transition:  0.5s ease-out;
@@ -98,7 +92,6 @@
                                 <i class="fas fa-sync-alt fa-spin-hover"></i> refresh
                             </button>
                         </div>
-                                            
                         <p id="device_list_table"></p>
 
                     </div>
@@ -170,15 +163,41 @@
 
                         <div class="container-fluid">
                             <div class="row py-2">
-                                <div class="col-12">
                                     <p>
                                         For testing purpose, the current GenAppKey is the same as the AppKey<br>
                                         Current value used is : <br>
                                         "350b7f62cf56ab3efe9e2cc724e83faa"
                                     </p>
-                                    <input type="text-area" id="genAppKeyInput" class="col-12" placeholder="please enter device GenAppKey as hexString" value=""/>
-                                </div>
-                            </div> 
+                                    <input type="text-area" id="genAppKeyInput" class="col-12" placeholder="please enter device GenAppKey as hexString" value="350b7f62cf56ab3efe9e2cc724e83faa"/>
+                            </div>
+                            <div class="row py-2">
+                                DataRate (DR)
+                                <select name="dataRates" id="drInput" class="col-12">
+                                    <option value="5">5</option>
+                                    <option value="4">4</option>
+                                    <option value="3">3</option>
+                                    <option value="2">2</option>
+                                    <option value="1">1</option>
+                                    <option value="0">0</option>
+                                </select>
+                            </div>
+                            <div class="row py-2">
+                                Payload Size by frame
+                                <input type="number" id="frame_payloadInput" class="col-12" placeholder="0< . < 222" value=222 />
+                            </div>
+                            <div class="row py-2">
+                                Timeout between messages (seconds)
+                                <input type="number" id="timeoutInput" class="col-12" placeholder="30< . < 200" value=150 />
+                            </div>
+                            <div class="row py-2">
+                                Frequency to broadcast on (hz)
+                                <input type="number" id="frequencyInput" class="col-12" placeholder="" value=868100000 />
+                            </div>
+                            <div class="row py-2">
+                                Redundancy packets
+                                <input type="number" id="redundancyInput" class="col-12" placeholder="0< . < 100" value=10 />
+                            </div>
+                            
                             <div class="row py-2">
                                 <div class="col-12">
                                     <button type="button" class="btn btn-light border m-2" onclick="setdeploymentInfos()">
@@ -203,9 +222,9 @@
     <script>
         var device_count = 0 , update_count=0;
         var active_device;
-        //setInterval(updateDeviceList, 5000);
 
-         function updateDeviceList() {
+        /*------DEVICES HANDLING------*/
+        function updateDeviceList() {
             var xhttp = new XMLHttpRequest(); //request to server
             
             //prepare how to handle answer
@@ -222,6 +241,8 @@
             <th scope="col">Name</th>\
             <th scope="col">Dev_eui</th>\
             <th scope="col">Select</th>\
+            <th scope="col">Remove</th>\
+            <th scope="col">Info</th>\
         </tr>\
     </thead>\
     <tbody>' ;
@@ -236,6 +257,12 @@
             <td>' + jsonAnswer[element].device_name + '</td>\
             <td>' + element + '</td>\
             <td>' + '<input type="checkbox" id="device'+device_count+'" name="device'+device_count+'" value="'+element+'">' + '</td>\
+            <td>' + '<button type="button" class="btn btn-light border" onclick="removeDeviceList(\''+element+'\')">\
+                            <i class="fas fa-trash"></i>\
+                        </button> ' + '</td>\
+            <td>' + '<button type="button" class="btn btn-light border" onclick="updateDeviceDetails(\''+element+'\')">\
+                            <i class="fas fa-info"></i>\
+                        </button> ' + '</td>\
         </tr>';
                         device_count ++;
                     }
@@ -243,19 +270,35 @@
     </tbody>\
 </table>';
                     document.getElementById("device_list_table").innerHTML = toWrite;
-                    addRowHandlers();
                 }
             }
             //actually send the request
             xhttp.open("GET", "/lorawan/device_list/", true);
             xhttp.send();
-
-         }
-         function refreshDeviceDetails(){
+        }
+        function refreshDeviceDetails(){
             updateDeviceDetails(active_device);
-         }
+        }
 
-         function updateDeviceDetails(dev_eui) {
+        function removeDeviceList(dev_eui) {
+            var xhttp = new XMLHttpRequest(); //request to server
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    //nothing to do ? 
+                }
+            }
+            toSend = '/lorawan/device_list/remove?eui=' + dev_eui
+            
+            console.log('Final : toSend')
+            console.log(toSend)
+            xhttp.open("POST", toSend, true);
+            xhttp.send();
+
+            updateDeviceList();
+        }
+
+        function updateDeviceDetails(dev_eui) {
             var xhttp = new XMLHttpRequest(); //request to server
             
             //prepare how to handle answer
@@ -285,10 +328,11 @@
             xhttp.open("GET", "/lorawan/device_details?eui=" + dev_eui , true);
             xhttp.send();
 
-         }
+        }
 
-         //Adding / refreshing action on row click
-         function addRowHandlers() {
+        //Adding / refreshing action on row click
+        /*
+        function addRowHandlers() {
             var table = document.getElementById("device_list_table");
             var rows = table.getElementsByClassName("table-row");
             for (i = 0; i < rows.length; i++) {
@@ -306,7 +350,10 @@
                 currentRow.onclick = createClickHandler(currentRow);
             }
         }
+        */
 
+
+        /*------UPDATES HANDLING------*/
         function updateUpdateList() {
             var xhttp = new XMLHttpRequest(); //request to server
             
@@ -350,15 +397,18 @@
     </tbody>\
 </table>';
                     document.getElementById("update_list_table").innerHTML = toWrite;
-                    addRowHandlers();
                 }
             }
             //actually send the request
             xhttp.open("GET", "/lorawan/update_list/", true);
             xhttp.send();
 
-         }
-         function updateDeploymentInfo() {
+        }
+
+
+
+        /*------DEPLOYEMENT HANDLING------*/
+        function updateDeploymentInfo() {
             var xhttp = new XMLHttpRequest(); //request to server
             
             //prepare how to handle answer
@@ -375,6 +425,11 @@
             <th scope="col">Device list</th>\
             <th scope="col">binary</th>\
             <th scope="col">GenAppKey</th>\
+            <th scope="col">DR</th>\
+            <th scope="col">frame payload</th>\
+            <th scope="col">timeout</th>\
+            <th scope="col">frequency</th>\
+            <th scope="col">redundancy</th>\
         </tr>\
     </thead>\
     <tbody>' ;
@@ -384,20 +439,24 @@
             <td>' + jsonAnswer['dev_eui_list'] + '</td>\
             <td>' + jsonAnswer['binary'] + '</td>\
             <td>' + jsonAnswer['genAppKey'] + '</td>\
+            <td>' + jsonAnswer['datarate'] + '</td>\
+            <td>' + jsonAnswer['f_size'] + '</td>\
+            <td>' + jsonAnswer['timeout'] + '</td>\
+            <td>' + jsonAnswer['frequency'] + '</td>\
+            <td>' + jsonAnswer['redundancy'] + '</td>\
         </tr>';
                     toWrite += '\
     </tbody>\
 </table>';
                     document.getElementById("deployment_list_table").innerHTML = toWrite;
-                    addRowHandlers();
                 }
             }
             //actually send the request
             xhttp.open("GET", "/lorawan/deployment_list/", true);
             xhttp.send();
 
-         }
-         function setdeploymentInfos(){
+        }
+        function setdeploymentInfos(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
 
@@ -423,16 +482,37 @@
             //Set updateBin
             toSend += '&bin='
             var binary = document.querySelector('input[type=radio]:checked')
-            //console.log('Binary found :')
-            //console.log(binary)
             toSend += binary.value
 
             //Set GenAppKey
             toSend += '&key='
             var genAppKey = document.getElementById("genAppKeyInput");
-            //console.log('GenAppKey found :')
-            //console.log(genAppKey.value)
             toSend += genAppKey.value
+
+            //Set DR
+            toSend += '&dr='
+            var dr = document.getElementById("drInput");
+            toSend += dr.value
+
+            //Set frame_payload
+            toSend += '&frame_payload='
+            var frame_payload = document.getElementById("frame_payloadInput");
+            toSend += frame_payload.value
+
+            //Set timeout
+            toSend += '&timeout='
+            var timeout = document.getElementById("timeoutInput");
+            toSend += timeout.value
+
+            //Set frequency
+            toSend += '&frequency='
+            var frequency = document.getElementById("frequencyInput");
+            toSend += frequency.value
+
+            //Set redundancy
+            toSend += '&redundancy='
+            var redundancy = document.getElementById("redundancyInput");
+            toSend += redundancy.value
 
             console.log('Final : toSend')
             console.log(toSend)
@@ -440,9 +520,9 @@
             xhttp.send();
 
             updateDeploymentInfo();
-         }
+        }
 
-         function askStartDeployment(){
+        function askStartDeployment(){
             var xhttp = new XMLHttpRequest(); //request to server
             xhttp.onreadystatechange = function () {
                 if (this.readyState == 4 && this.status == 200) {
@@ -451,10 +531,10 @@
             }
             xhttp.open("POST", "/lorawan/deployment/start", true);
             xhttp.send();
-         }
-          
+        }
+        
 
-         function askPackageVersion(){
+        function askPackageVersion(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
 
@@ -465,9 +545,8 @@
             }
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '00', true);
             xhttp.send();
-
-         }
-         function askVersionRunning(){
+        }
+        function askVersionRunning(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
 
@@ -479,8 +558,8 @@
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '01', true);
             xhttp.send();
 
-         }
-         function askVersionStored(){
+        }
+        function askVersionStored(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
 
@@ -492,8 +571,8 @@
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '02', true);
             xhttp.send();
 
-         }
-         function askSpaceStatus(){
+        }
+        function askSpaceStatus(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
 
@@ -505,8 +584,8 @@
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '03', true);
             xhttp.send();
 
-         }
-         function askUpTime(){
+        }
+        function askUpTime(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
 
@@ -517,9 +596,9 @@
             }
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '04', true);
             xhttp.send();
-         }
+        }
 
-         function askEraseSlot0(){
+        function askEraseSlot0(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
             xhttp.onreadystatechange = function () {
@@ -529,8 +608,8 @@
             }
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '05'+ "&slot=0", true);
             xhttp.send();
-         }
-         function askEraseSlot1(){
+        }
+        function askEraseSlot1(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
             xhttp.onreadystatechange = function () {
@@ -540,8 +619,8 @@
             }
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '05'+ "&slot=1", true);
             xhttp.send();
-         }
-         function askDeviceID(){
+        }
+        function askDeviceID(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
             xhttp.onreadystatechange = function () {
@@ -551,11 +630,11 @@
             }
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '06', true);
             xhttp.send();
-         }
+        }
 
 
         //Start default actions
-        window.onload = addRowHandlers();
+        //window.onload = addRowHandlers();
 
 
     </script>

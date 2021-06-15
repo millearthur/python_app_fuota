@@ -29,5 +29,11 @@ class device_list():
             print("-> After : ", end="")
             print(self.device_list)
             
+            
+    def remove_device(self,dev_eui):
+        print("Removing : "+ dev_eui + " from the list")
+        
+        self.device_list.pop(dev_eui)
+        
     def get_device_list(self):
         return self.device_list

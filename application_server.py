@@ -21,7 +21,7 @@ from google.protobuf import duration_pb2
 
 from Crypto.Cipher import AES
 
-from lorawan_deployement import *
+from lorawan_deployment import *
 from lorawan_as import *
 from lorawan_status_version import *
 from device_list import *
@@ -40,9 +40,6 @@ as_api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5X2lkIjoiYzgyMTc
 
 key = base64.b64encode(
             bytes('%s:%s' % ('admin', 'chirpstack'), 'utf-8')).decode('ascii')
-
-print("start\n",end="")
-print("Hello World")
 
 
 # Connect without using TLS.
@@ -64,51 +61,57 @@ mcRootKeyA =  bytes([0x90, 0xe4, 0x43, 0x45, 0x32, 0x9d, 0xd0, 0x5c, 0xe8, 0x34,
 # in device list, devices should be identified by a hexstring corresponding to their devEUI
 # inside a device, there can be various fields, they can be filled as events happens
 
+print("Starting Server ...")
 
+print("Loading binaries")
+binaries_list = {}
 
-try : 
-  binaries_list = { 
-    'bin/patch_demo_ddelta_v1v2.bin_signed' : {
-      'size' : os.path.getsize("bin/patch_demo_ddelta_v1v2.bin_signed"),
+try :
+  path = 'bin/patch_demo_ddelta_v1v2.bin_signed'
+  binaries_list.update({path : {
+      'size' : os.path.getsize(path),
       'is_update' : True,
       'target'    : 'DISCO',
       'update_type' : 'DDELTA',
       'update_z' : 'Arithmetic', 
-    },
-    'bin/patch_demo_jdiff_v1v2.bin_signed' : {
-      'size' : os.path.getsize("bin/patch_demo_jdiff_v1v2.bin_signed"),
+    },})
+except:
+  print("Could not add : " + path)
+    
+try : 
+  path = 'bin/patch_demo_jdiff_v1v2.bin_signed'
+  binaries_list.update({path : {
+      'size' : os.path.getsize(path),
       'is_update' : True,
       'target'    : 'DISCO',
       'update_type' : 'JDIFF',
-    },
-    'bin/patch_ddelta_v100_v200.bin_signed' : {
-      'size' : os.path.getsize('bin/patch_ddelta_v100_v200.bin_signed'),
+    },})
+except:
+  print("Could not add : " + path)
+  
+try :
+  path = 'bin/patch_ddelta_v1v2.bin_signed'
+  binaries_list.update({path : {
+      'size' : os.path.getsize(path),
       'is_update' : True,
       'target' : 'DISCO',
       'update_type': 'DDELTA',
-    } ,
-    'bin/patch_jdiff_v100_v200.bin_signed' : {
-      'size' : os.path.getsize('bin/patch_jdiff_v100_v200.bin_signed'),
+    },})
+except:
+  print("Could not add : " + path)
+  
+try :
+  path = 'bin/patch_jdiff_v1v2.bin_signed'
+  binaries_list.update({path : {
+      'size' : os.path.getsize(path),
       'is_update' : True,
       'target' : 'DISCO',
       'update_type': 'JPATCH',
-    },
-    'bin/patch_ddelta_v101_v201.bin_signed' : {
-      'size' : os.path.getsize('bin/patch_ddelta_v101_v201.bin_signed'),
-      'is_update' : True,
-      'target' : 'DISCO',
-      'update_type': 'DDELTA',
-    } ,
-    'bin/patch_jdiff_v101_v201.bin_signed' : {
-      'size' : os.path.getsize('bin/patch_jdiff_v101_v201.bin_signed'),
-      'is_update' : True,
-      'target' : 'DISCO',
-      'update_type': 'JPATCH',
-    }
-  }
-except: 
-  binaries_list = {
-}
+    },})
+except:
+  print("Could not add : " + path)
+
+print("Done!")
 
 class Handler(BaseHTTPRequestHandler):
   global LWDeployment
@@ -145,11 +148,23 @@ class Handler(BaseHTTPRequestHandler):
         StatusVersion.askDeviceID(eui)
       else : 
         print("Command not found")
+    elif "/lorawan/device_list/remove" in self.path :
+      eui = query_args['eui'][0]
+      print(eui)
+      deviceList.remove_device(eui)
+      
     elif "/lorawan/deployment/set" in self.path :
-      eui = query_args['eui']
-      binary = query_args['bin'][0]
-      genAppkey = query_args['key'][0]
-      LWDeployment.update_deployment(dev_eui_list = eui, binaryPath = binary, key=genAppkey)
+      eui           = query_args['eui']
+      binary        = query_args['bin'][0]
+      genAppkey     = query_args['key'][0]
+      dr            = int(query_args['dr'][0])
+      frame_payload = int(query_args['frame_payload'][0])
+      timeout       = int(query_args['timeout'][0])
+      frequency     = int(query_args['frequency'][0])
+      redundancy    = int(query_args['redundancy'][0])
+      
+      LWDeployment.update_deployment(dev_eui_list = eui, binaryPath = binary, key=genAppkey, datarate=dr, f_size=frame_payload, frequency=frequency,timeout=timeout,redundancy=redundancy)
+      
     elif "/lorawan/deployment/start" in self.path :
       LWDeployment.start_deployment()
     else: 
@@ -271,16 +286,32 @@ class Handler(BaseHTTPRequestHandler):
 
   def send_Device_details(self,dev_eui) :
     devices_list = deviceList.get_device_list()
-
-
     self.send_response(200)
     self.end_headers()
     self.wfile.write(json.dumps(devices_list[dev_eui]).encode())
   
   def send_Update_List(self) :
+    self.refresh_Update_List()
     self.send_response(200)
     self.end_headers()
     self.wfile.write(json.dumps(binaries_list).encode())
+    
+  def refresh_Update_List(self) :
+    path = 'bin'
+    obj = os.scandir(path)
+    print("Files and Directories in '% s':" % path)
+    for entry in obj :
+        if entry.is_dir() or entry.is_file():
+            print("Verif " + entry.name)
+            try : 
+              binaries_list[(path + '/' + entry.name)]
+            except :
+              print("Adding " + entry.name)
+              binaries_list.update({(path + '/' + entry.name) : {
+                'size' : os.path.getsize((path + '/' + entry.name)),
+                'update_type' : 'SCANNED',
+              },
+              })
 
   def send_Deployment_List(self) :
     try:
@@ -347,7 +378,7 @@ deviceList = device_list()
 ApplicationServer = lorawan_as()
 StatusVersion = lorawan_status_version(ApplicationServer,deviceList)
 
-LWDeployment = lorawan_deployement()
+LWDeployment = lorawan_deployment()
 
 #StatusVersion.send(dev_eui = (bytes([0x00, 0x80, 0x00, 0x00, 0x04, 0x00, 0x6a, 0xaa]).hex()),port = 111,payload = bytes([1, 2, 3]))
 httpd.serve_forever()
