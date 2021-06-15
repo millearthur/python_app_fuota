@@ -299,6 +299,7 @@
         }
 
         function updateDeviceDetails(dev_eui) {
+            active_device = dev_eui
             var xhttp = new XMLHttpRequest(); //request to server
             
             //prepare how to handle answer
@@ -534,6 +535,11 @@
         }
         
 
+
+
+
+        /*------PACKAGE HANDLING------*/
+
         function askPackageVersion(){
             var xhttp = new XMLHttpRequest(); //request to server
             var dev_eui = active_device;
@@ -631,11 +637,6 @@
             xhttp.open("POST", "/lorawan/send?eui=" + dev_eui+ "&cmd=" + '06', true);
             xhttp.send();
         }
-
-
-        //Start default actions
-        //window.onload = addRowHandlers();
-
 
     </script>
 </body>
