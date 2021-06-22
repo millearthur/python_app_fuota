@@ -57,7 +57,7 @@ By default the program will be able to scan the `bin/` to add new binaries to th
 
 ## Specification
 
-The python server includes the implementation of the server-side specification for lorawan : `LoRaWAN Version and Status Specification_v0_2` see [Specifiation](./LoRaWAN Version and Status Specification_v0_2.pdf)
+The python server includes the implementation of the server-side specification for lorawan : `LoRaWAN Version and Status Specification_v0_2` see [Specifiation](/LoRaWAN Version and Status Specification_v0_2.pdf)
 
 This implementation is done in the `lorawan_status_version.py` file. The file provides a handle function that can be called with the payload received on port 110, to be handled. The file also provide the interface to send the request to the device.
 The values that are sent to the device have been pre setup in the file, but this can be changed if the specification is updated or if the deployement envorinmemt if modified.
