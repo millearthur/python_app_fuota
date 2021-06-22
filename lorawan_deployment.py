@@ -36,18 +36,21 @@ class lorawan_deployment() :
     
   def update_deployment(self,dev_eui_list, binaryPath, key, datarate, f_size, frequency, timeout, redundancy):
     #verify f_size depending on dr
+    #The maximum payload considers the overhead included by the fragmentation process
+    # NB: - from specification : 2bytes
+    #     - from testing : 3 bytes (execpte DR4/5 where ok)
     if (datarate == 5):
       f_size = min(222,f_size)
     elif (datarate == 4):
       f_size = min(222,f_size)
     elif (datarate == 3):
-      f_size = min(115,f_size)
+      f_size = min(112,f_size)
     elif (datarate == 2):
-      f_size = min(51,f_size)
+      f_size = min(48,f_size)
     elif (datarate == 1):
-      f_size = min(51,f_size)
+      f_size = min(48,f_size)
     elif (datarate == 0):
-      f_size = min(51,f_size)
+      f_size = min(17,f_size) #even lower due to the time on air betweem transmissions
     else :
       datarate = 5
       f_size = 222
@@ -138,6 +141,7 @@ class lorawan_deployment() :
     main_deploy.fragmentation_matrix = 0
     main_deploy.fragmentation_block_ack_delay = 1
     main_deploy.fragmentation_descriptor = bytes([0, 0, 0, 0])
+    main_deploy.request_fragmentation_session_status = fuota.RequestFragmentationSessionStatus.NO_REQUEST
 
     print("deployment prepared with values :")
     print(main_deploy)
