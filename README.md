@@ -24,6 +24,8 @@ The server also handles a basic authentication when a new client connects to the
 
 In the main handleGET/POST function, the operation desired by the client is identified by parsing the request. The correct function is then called, with the right arguments.
 
+The communication between the client page and the server is done from the JavaScript function of the page, and using the POST/GET function from the REST interface of the server. The data is transmitted, serialized in Json.
+
 ## Using Chirpstack-Application-Server
 
 The server is able to handle the data and current status of an application server. The server `Chirpstack-Application-Server` is then configured to have his REST integration sending data to the python server. In our case using localhost:8091.
